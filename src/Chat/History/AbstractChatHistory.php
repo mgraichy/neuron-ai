@@ -128,7 +128,7 @@ abstract class AbstractChatHistory implements ChatHistoryInterface
         return $systemPrompt;
     }
 
-    public function getPreSummaryMessages(): array
+    public function getPreSummaryHistory(): array
     {
         $preSummaryMessages = $this->preSummaryHistory;
         // We keep this property empty so that $this->isSummarizable()'s first condition immediately returns false,
