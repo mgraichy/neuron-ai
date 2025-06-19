@@ -7,6 +7,7 @@ use NeuronAI\Chat\Enums\MessageRole;
 
 class Message implements \JsonSerializable
 {
+    protected ?string $summary = null;
     protected ?Usage $usage = null;
     protected array $attachments = [];
 
@@ -67,6 +68,16 @@ class Message implements \JsonSerializable
     {
         $this->usage = $usage;
         return $this;
+    }
+
+    public function getSummary()
+    {
+        return $this->summarized;
+    }
+
+    public function setSummary(string $summarized): void
+    {
+        $this->summarized = $summarized;
     }
 
     public function addMetadata(string $key, string|array|null $value): Message
