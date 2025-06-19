@@ -123,7 +123,8 @@ abstract class AbstractChatHistory implements ChatHistoryInterface
             return null;
         }
 
-        $systemPrompt = $prompt ?? "You are a helpful assistant who summarizes messages in the best possible way for an LLM's further prompts.";
+        $systemPrompt = $prompt ?? "You are a helpful assistant who summarizes messages in the best possible way " .
+                                   "for an LLM's understanding.";
 
         return $systemPrompt;
     }
@@ -141,10 +142,11 @@ abstract class AbstractChatHistory implements ChatHistoryInterface
     protected function formatPreSummaryMessages(): void
     {
         $history = $this->history;
-        $summary = "Summarize the conversation below using concise bullet points. Maintain a focus on any requests, questions, or action items the user may have raised. Include:
-- Key topics discussed
-- Notable shifts in tone
-- Questions asked and answered" . PHP_EOL . PHP_EOL;
+        $summary = "Summarize the conversation below using concise bullet points. Maintain a focus on any requests, " .
+                   "questions, or action items the user may have raised. Include:" . PHP_EOL .
+                   "- Key topics discussed" . PHP_EOL .
+                   "- Notable shifts in tone" . PHP_EOL .
+                   "- Questions asked and answered" . PHP_EOL . PHP_EOL;
         foreach ($history as $message) {
             $summary .= "{$message->getRole()}: {$message->getContent()}" . PHP_EOL . PHP_EOL;
         }
