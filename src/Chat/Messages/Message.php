@@ -70,14 +70,14 @@ class Message implements \JsonSerializable
         return $this;
     }
 
-    public function getSummary()
+    public function getSummaryMessage()
     {
-        return $this->summarized;
+        return $this->summary;
     }
 
-    public function setSummary(string $summarized): void
+    public function setSummaryMessage(string $summarized): void
     {
-        $this->summarized = $summarized;
+        $this->summary = $summarized;
     }
 
     public function addMetadata(string $key, string|array|null $value): Message

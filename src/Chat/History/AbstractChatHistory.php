@@ -18,8 +18,9 @@ use NeuronAI\Tools\Tool;
 abstract class AbstractChatHistory implements ChatHistoryInterface
 {
     protected array $history = [];
+    protected array $preSummaryHistory = [];
 
-    public function __construct(protected int $contextWindow = 50000)
+    public function __construct(protected int $contextWindow = 50000, protected bool $shouldSummarize = false)
     {
     }
 
@@ -92,6 +93,11 @@ abstract class AbstractChatHistory implements ChatHistoryInterface
             return;
         }
 
+        $role = \end($this->history)->getRole();
+        if ($this->shouldSummarize && $role === 'assistant') {
+            $this->formatPreSummaryMessages();
+        }
+
         // Cut old messages
         do {
             $this->removeOldestMessage();
@@ -104,6 +110,48 @@ abstract class AbstractChatHistory implements ChatHistoryInterface
     public function getFreeMemory(): int
     {
         return $this->contextWindow - $this->calculateTotalUsage();
+    }
+
+    public function shouldSummarize(): bool
+    {
+        return $this->preSummaryHistory ? true : false && $this->shouldSummarize;
+    }
+
+    public function getSummaryPrompt(?string $prompt = null): ?string
+    {
+        if (!$this->shouldSummarize) {
+            return null;
+        }
+
+        $systemPrompt = $prompt ?? "You are a helpful assistant who summarizes messages in the best possible way for an LLM's further prompts.";
+
+        return $systemPrompt;
+    }
+
+    public function getPreSummaryMessages(): array
+    {
+        $preSummaryMessages = $this->preSummaryHistory;
+        // We keep this property empty so that $this->isSummarizable()'s first condition immediately returns false,
+        // just in case there are any other calls within the same request-response cycle:
+        $this->preSummaryHistory = [];
+
+        return $preSummaryMessages;
+    }
+
+    protected function formatPreSummaryMessages(): void
+    {
+        $history = $this->history;
+        $summary = "Summarize the conversation below using concise bullet points. Maintain a focus on any requests, questions, or action items the user may have raised. Include:
+- Key topics discussed
+- Notable shifts in tone
+- Questions asked and answered" . PHP_EOL . PHP_EOL;
+        foreach ($history as $message) {
+            $summary .= "{$message->getRole()}: {$message->getContent()}" . PHP_EOL . PHP_EOL;
+        }
+        $len = strlen($summary) - 2;
+        $finalSummary = substr($summary, 0, $len);
+
+        $this->preSummaryHistory = [new Message(MessageRole::USER, $finalSummary)];
     }
 
     public function jsonSerialize(): array
