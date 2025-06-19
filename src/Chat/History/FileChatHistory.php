@@ -12,9 +12,10 @@ class FileChatHistory extends AbstractChatHistory
         protected string $key,
         int $contextWindow = 50000,
         protected string $prefix = 'neuron_',
-        protected string $ext = '.chat'
+        protected string $ext = '.chat',
+        bool $shouldSummarize = false
     ) {
-        parent::__construct($contextWindow);
+        parent::__construct($contextWindow, $shouldSummarize);
 
         if (!\is_dir($this->directory)) {
             throw new ChatHistoryException("Directory '{$this->directory}' does not exist");
