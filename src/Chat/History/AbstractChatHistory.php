@@ -114,7 +114,7 @@ abstract class AbstractChatHistory implements ChatHistoryInterface
 
     public function shouldSummarize(): bool
     {
-        return $this->preSummaryHistory ? true : false && $this->shouldSummarize;
+        return $this->shouldSummarize;
     }
 
     public function getSummaryPrompt(?string $prompt = null): ?string
@@ -132,9 +132,6 @@ abstract class AbstractChatHistory implements ChatHistoryInterface
     public function getPreSummaryHistory(): array
     {
         $preSummaryMessages = $this->preSummaryHistory;
-        // We keep this property empty so that $this->isSummarizable()'s first condition immediately returns false,
-        // just in case there are any other calls within the same request-response cycle:
-        $this->preSummaryHistory = [];
 
         return $preSummaryMessages;
     }
