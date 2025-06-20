@@ -123,17 +123,12 @@ abstract class AbstractChatHistory implements ChatHistoryInterface
             return null;
         }
 
-        $systemPrompt = $prompt ?? "You are a helpful assistant who summarizes messages in the best possible way " .
-                                   "for an LLM's understanding.";
-
-        return $systemPrompt;
+        return $prompt ?? "You are a helpful assistant who summarizes messages in the best possible way for an LLM's understanding";
     }
 
     public function getPreSummaryHistory(): array
     {
-        $preSummaryMessages = $this->preSummaryHistory;
-
-        return $preSummaryMessages;
+        return $this->preSummaryHistory;
     }
 
     protected function formatPreSummaryMessages(): void
@@ -150,7 +145,7 @@ abstract class AbstractChatHistory implements ChatHistoryInterface
         $len = strlen($summary) - 2;
         $finalSummary = substr($summary, 0, $len);
 
-        $this->preSummaryHistory = [new Message(MessageRole::USER, $finalSummary)];
+        $this->preSummaryHistory = [new UserMessage($finalSummary)];
     }
 
     public function jsonSerialize(): array
