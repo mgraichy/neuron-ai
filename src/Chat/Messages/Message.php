@@ -70,7 +70,7 @@ class Message implements \JsonSerializable
         return $this;
     }
 
-    public function getSummaryMessage()
+    public function getSummaryMessage(): ?string
     {
         return $this->summary;
     }

@@ -60,8 +60,11 @@ abstract class AbstractChatHistory implements ChatHistoryInterface
         return $this->history;
     }
 
-    public function getLastMessage(): Message
+    public function getLastMessage(?bool $isSummary = false): Message
     {
+        if ($isSummary) {
+            return \end($this->preSummaryHistory) ?: new AssistantMessage('');
+        }
         return \end($this->history);
     }
 

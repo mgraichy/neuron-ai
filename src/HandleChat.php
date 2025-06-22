@@ -25,12 +25,11 @@ trait HandleChat
     {
         $message = $this->chatAsync($messages)->wait();
 
-        if ($this->shouldSummarize()) {
-            $summary = $this->resolveProvider()
-                ->systemPrompt($this->chatHistory->getSummaryPrompt())
-                ->chatAsync($this->chatHistory->getPreSummaryHistory())
-                ->then($this->getAgentCallback(), $this->getAgentExceptionCallback())->wait();
-
+        if (
+            $this->chatHistory->shouldSummarize() &&
+            !empty($this->chatHistory->getLastMessage(isSummary: true)->getContent())
+        ) {
+            $summary = $this->summarizeAsync()->wait();
             $message->setSummaryMessage($summary->getContent());
         }
 
@@ -55,15 +54,32 @@ trait HandleChat
             ->setTools($tools)
             ->chatAsync(
                 $this->resolveChatHistory()->getMessages()
-            )->then($this->getAgentCallback(), $this->getAgentExceptionCallback());
+            )->then($this->getAgentClosure(), $this->getAgentExceptionClosure());
     }
 
-    protected function getAgentCallback(): Callable
+    protected function summarizeAsync(): PromiseInterface
     {
-        return function (Message $response) {
+        $this->notify('chat-start');
+
+        $this->fillChatHistory($this->chatHistory->getLastMessage(isSummary: true));
+
+        $this->notify(
+            'inference-start',
+            new InferenceStart($this->chatHistory->getLastMessage(isSummary: true))
+        );
+
+        return $this->resolveProvider()
+            ->systemPrompt($this->chatHistory->getSummaryPrompt())
+            ->chatAsync($this->chatHistory->getPreSummaryHistory())
+            ->then($this->getAgentClosure(isSummary: true), $this->getAgentExceptionClosure());
+    }
+
+    protected function getAgentClosure(bool $isSummary = false): Callable
+    {
+        return function (Message $response) use ($isSummary) {
             $this->notify(
                 'inference-stop',
-                new InferenceStop($this->resolveChatHistory()->getLastMessage(), $response)
+                new InferenceStop($this->resolveChatHistory()->getLastMessage(isSummary: $isSummary), $response)
             );
 
             if ($response instanceof ToolCallMessage) {
@@ -80,7 +96,7 @@ trait HandleChat
         };
     }
 
-    protected function getAgentExceptionCallback(): Callable
+    protected function getAgentExceptionClosure(): Callable
     {
         return function (\Throwable $exception) {
             $this->notify('error', new AgentError($exception));
