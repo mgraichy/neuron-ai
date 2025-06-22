@@ -6,6 +6,7 @@ use NeuronAI\Chat\History\AbstractChatHistory;
 use NeuronAI\Chat\History\FileChatHistory;
 use NeuronAI\Chat\History\InMemoryChatHistory;
 use NeuronAI\Chat\Messages\Usage;
+use NeuronAI\Chat\Messages\AssistantMessage;
 use NeuronAI\Chat\Messages\UserMessage;
 use PHPUnit\Framework\TestCase;
 
@@ -90,5 +91,52 @@ class ChatHistoryTest extends TestCase
         $history->addMessage($message);
         $this->assertEquals(100, $history->getFreeMemory());
         $this->assertEquals(200, $history->calculateTotalUsage());
+    }
+
+    public function test_chat_history_instance_with_summary()
+    {
+        $history = new InMemoryChatHistory(contextWindow: 50000, shouldSummarize: true);
+        $this->assertInstanceOf(AbstractChatHistory::class, $history);
+    }
+
+    public function test_file_chat_history_with_summary()
+    {
+        $history = new FileChatHistory(
+            directory: __DIR__,
+            key: 'test',
+            shouldSummarize: true
+        );
+        $this->assertFileDoesNotExist(__DIR__.DIRECTORY_SEPARATOR.'neuron_test.chat');
+
+        $history->addMessage(new UserMessage('Hello!'));
+        $this->assertFileExists(__DIR__.DIRECTORY_SEPARATOR.'neuron_test.chat');
+        $this->assertCount(1, $history->getMessages());
+
+        $history->flushAll();
+        $this->assertFileDoesNotExist(__DIR__.DIRECTORY_SEPARATOR.'neuron_test.chat');
+        $this->assertCount(0, $history->getMessages());
+    }
+
+    public function test_chat_history_summarize()
+    {
+        $history = new InMemoryChatHistory(300, shouldSummarize: true);
+        $this->assertEquals(true, $history->shouldSummarize());
+        $this->assertEquals(300, $history->getFreeMemory());
+
+        // Prior to filling in $history->preSummaryHistory:
+        $this->assertEquals([], $history->getPreSummaryHistory());
+        $this->assertInstanceOf(AssistantMessage::class, $history->getLastMessage(isSummary: true));
+
+        $message = new UserMessage('Hello!');
+        $message->setUsage(new Usage(100, 200));
+        $history->addMessage($message);
+        $assistantMessage = new AssistantMessage('I\'ll trigger formatPreSummaryMessages()');
+        $assistantMessage->setUsage(new Usage(200, 300));
+        $history->addMessage($assistantMessage);
+
+        $this->assertStringStartsWith(
+            'Summarize the conversation below',
+            $history->getLastMessage(true)->getContent()
+        );
     }
 }
