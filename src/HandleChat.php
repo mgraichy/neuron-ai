@@ -74,7 +74,7 @@ trait HandleChat
             ->then($this->getAgentClosure(isSummary: true), $this->getAgentExceptionClosure());
     }
 
-    protected function getAgentClosure(bool $isSummary = false): Callable
+    protected function getAgentClosure(bool $isSummary = false): callable
     {
         return function (Message $response) use ($isSummary) {
             $this->notify(
@@ -96,7 +96,7 @@ trait HandleChat
         };
     }
 
-    protected function getAgentExceptionClosure(): Callable
+    protected function getAgentExceptionClosure(): callable
     {
         return function (\Throwable $exception) {
             $this->notify('error', new AgentError($exception));

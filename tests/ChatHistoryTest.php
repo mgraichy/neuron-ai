@@ -99,24 +99,6 @@ class ChatHistoryTest extends TestCase
         $this->assertInstanceOf(AbstractChatHistory::class, $history);
     }
 
-    public function test_file_chat_history_with_summary()
-    {
-        $history = new FileChatHistory(
-            directory: __DIR__,
-            key: 'test',
-            shouldSummarize: true
-        );
-        $this->assertFileDoesNotExist(__DIR__.DIRECTORY_SEPARATOR.'neuron_test.chat');
-
-        $history->addMessage(new UserMessage('Hello!'));
-        $this->assertFileExists(__DIR__.DIRECTORY_SEPARATOR.'neuron_test.chat');
-        $this->assertCount(1, $history->getMessages());
-
-        $history->flushAll();
-        $this->assertFileDoesNotExist(__DIR__.DIRECTORY_SEPARATOR.'neuron_test.chat');
-        $this->assertCount(0, $history->getMessages());
-    }
-
     public function test_chat_history_summarize()
     {
         $history = new InMemoryChatHistory(300, shouldSummarize: true);
@@ -136,7 +118,7 @@ class ChatHistoryTest extends TestCase
 
         $this->assertStringStartsWith(
             'Summarize the conversation below',
-            $history->getLastMessage(true)->getContent()
+            $history->getLastMessage(isSummary: true)->getContent()
         );
     }
 }

@@ -3,7 +3,74 @@
 [![Latest Stable Version](https://poser.pugx.org/inspector-apm/neuron-ai/v/stable)](https://packagist.org/packages/inspector-apm/neuron-ai)
 [![Total Downloads](http://poser.pugx.org/inspector-apm/neuron-ai/downloads)](https://packagist.org/packages/inspector-apm/neuron-ai)
 
-> Before moving on, support the community giving a GitHub star ⭐️. Thank you!
+> Before moving on, support the community giving a GitHub star ⭐️ [to the original repo](https://github.com/inspector-apm/neuron-ai/). Thank you!
+
+## Use of Summaries
+
+1. Register a chat history with enabled summarizing:
+
+    ```php
+    class MyAgent extends Agent
+    {
+        protected function chatHistory()
+        {
+            return new InMemoryChatHistory(
+                contextWindow: 50000,
+                shouldSummarize: true
+            );
+        }
+    }
+    ```
+
+    * This summarizes only when your tokens exceed the context window.
+
+
+2. Send the summary to the front end along with the LLM's message:
+
+    ```php
+    $response = MyAgent::make($user)->chat(
+        new UserMessage("Hello!")
+    );
+
+    $content['content'] = $response->getContent();
+    if ($summary = $response->getSummaryMessage()) {
+        $content['summary'] = $summary;
+    }
+
+    return ['data' => $content];
+    ```
+
+    * The summary is not intended for display to the user.
+    * Instead, include the summary with only the user's current (i.e., last) message in your next frontend call to the LLM API.
+    * This should reduce token usage for further calls to the LLM, while still giving the LLM enough context to answer appropriately.
+
+## Reference to Added or Modified Classes and Methods
+1. [**src/HandleChat.php**](https://github.com/mgraichy/neuron-ai/blob/main/src/HandleChat.php)
+    * `chat(Message|array $messages): Message`
+    * `chatAsync(Message|array $messages): PromiseInterface`
+    * `summarizeAsync(): PromiseInterface`
+    * The following two methods extract the callbacks so they can be repeatedly used throughout the class:
+        * `getAgentClosure(bool $isSummary = false): callable`
+        * `getAgentExceptionClosure(): callable`
+2. [**src/Chat/History/AbstractChatHistory.php**](https://github.com/mgraichy/neuron-ai/blob/main/src/Chat/History/AbstractChatHistory.php)
+    * `$preSummaryHistory = [];` and `__construct(protected int $contextWindow = 50000, protected bool $shouldSummarize = false)`
+    * `getLastMessage(?bool $isSummary = false): Message`
+    * `cutHistoryToContextWindow(): void`
+    * `shouldSummarize(): bool`
+    * `getSummaryPrompt(?string $prompt = null): ?string`
+    * `getPreSummaryHistory(): array`
+    * `formatPreSummaryMessages(): void`
+3. [**src/Chat/History/FileChatHistory.php**](https://github.com/mgraichy/neuron-ai/blob/main/src/Chat/History/FileChatHistory.php)
+    * `public function __construct(/*...*/, bool $shouldSummarize = false)`
+4. [**src/Chat/History/InMemoryChatHistory.php**](https://github.com/mgraichy/neuron-ai/blob/main/src/Chat/History/InMemoryChatHistory.php)
+    * `__construct(int $contextWindow = 50000, bool $shouldSummarize = false)`
+5. [**src/Chat/Messages/Message.php**](https://github.com/mgraichy/neuron-ai/blob/main/src/Chat/Messages/Message.php)
+    * `protected ?string $summary = null;`
+    * `getSummaryMessage(): ?string`
+    * `setSummaryMessage(string $summarized): void`
+6. [**tests/ChatHistoryTest.php**](https://github.com/mgraichy/neuron-ai/blob/main/tests/ChatHistoryTest.php)
+    * `test_chat_history_instance_with_summary()`
+    * `test_chat_history_summarize()`
 
 [**Video Tutorial**](https://www.youtube.com/watch?v=fJSX8wWIDO8)
 
@@ -41,7 +108,7 @@ https://docs.neuron-ai.dev/resources/guides-and-tutorials.
 
 ## Install
 
-Install the latest version of the package:
+Install the latest version of the original package:
 
 ```
 composer require inspector-apm/neuron-ai
